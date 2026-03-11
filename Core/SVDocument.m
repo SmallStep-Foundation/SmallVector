@@ -8,6 +8,10 @@
 #import "SVRectShape.h"
 #import "SVOvalShape.h"
 #import "SVPathShape.h"
+#if defined(GNUSTEP)
+#import <errno.h>
+#import <string.h>
+#endif
 
 static const CGFloat kDefaultArtboardWidth = 800.0;
 static const CGFloat kDefaultArtboardHeight = 600.0;
@@ -81,11 +85,23 @@ static const CGFloat kDefaultArtboardHeight = 600.0;
                                                              options:0
                                                                error:outError];
     if (!data) return NO;
+#if defined(GNUSTEP)
+    return [data writeToFile:path atomically:YES];
+#else
     return [data writeToFile:path options:NSDataWritingAtomic error:outError];
+#endif
 }
 
 - (BOOL)readFromFile:(NSString *)path error:(NSError **)outError {
+#if defined(GNUSTEP)
+    NSData *data = [NSData dataWithContentsOfFile:path];
+    if (!data && outError) {
+        *outError = [NSError errorWithDomain:NSPOSIXErrorDomain code:errno userInfo:
+            [NSDictionary dictionaryWithObject:[NSString stringWithFormat:@"Failed to read file: %s", strerror(errno)] forKey:NSLocalizedDescriptionKey]];
+    }
+#else
     NSData *data = [NSData dataWithContentsOfFile:path options:0 error:outError];
+#endif
     if (!data) return NO;
     NSDictionary *root = [NSPropertyListSerialization propertyListWithData:data
                                                                     options:NSPropertyListImmutable
