@@ -92,6 +92,90 @@ static const CGFloat kDefaultArtboardHeight = 600.0;
 #endif
 }
 
+#pragma mark - SVG export
+
+static NSString *SVHexColor(NSColor *color) {
+    if (!color) return @"none";
+    NSColor *rgb = [color colorUsingColorSpaceName:NSDeviceRGBColorSpace];
+    if (!rgb) return @"none";
+    CGFloat r, g, b, a;
+    [rgb getRed:&r green:&g blue:&b alpha:&a];
+    if (a < 0.01) return @"none";
+    return [NSString stringWithFormat:@"#%02x%02x%02x",
+        (int)(r * 255.0 + 0.5), (int)(g * 255.0 + 0.5), (int)(b * 255.0 + 0.5)];
+}
+
+static NSString *SVCommonAttrs(SVShape *shape) {
+    return [NSString stringWithFormat:@"fill=\"%@\" stroke=\"%@\" stroke-width=\"%g\"",
+        SVHexColor([shape fillColor]), SVHexColor([shape strokeColor]), [shape strokeWidth]];
+}
+
+- (NSString *)svgElementForShape:(SVShape *)shape {
+    if ([shape isKindOfClass:[SVRectShape class]]) {
+        NSRect f = [shape frame];
+        return [NSString stringWithFormat:@"<rect x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" %@/>",
+            f.origin.x, f.origin.y, f.size.width, f.size.height, SVCommonAttrs(shape)];
+    }
+    if ([shape isKindOfClass:[SVOvalShape class]]) {
+        NSRect f = [shape frame];
+        return [NSString stringWithFormat:@"<ellipse cx=\"%g\" cy=\"%g\" rx=\"%g\" ry=\"%g\" %@/>",
+            f.origin.x + f.size.width / 2.0, f.origin.y + f.size.height / 2.0,
+            f.size.width / 2.0, f.size.height / 2.0, SVCommonAttrs(shape)];
+    }
+    if ([shape isKindOfClass:[SVPathShape class]]) {
+        SVPathShape *p = (SVPathShape *)shape;
+        NSBezierPath *bp = [p path];
+        NSMutableString *d = [NSMutableString string];
+        NSInteger count = bp ? [bp elementCount] : 0;
+        NSInteger i;
+        for (i = 0; i < count; i++) {
+            NSPoint pts[3];
+            NSBezierPathElement kind = [bp elementAtIndex:i associatedPoints:pts];
+            switch (kind) {
+                case NSMoveToBezierPathElement:
+                    [d appendFormat:@"M %g %g ", pts[0].x, pts[0].y];
+                    break;
+                case NSLineToBezierPathElement:
+                    [d appendFormat:@"L %g %g ", pts[0].x, pts[0].y];
+                    break;
+                case NSCurveToBezierPathElement:
+                    [d appendFormat:@"C %g %g %g %g %g %g ",
+                        pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y];
+                    break;
+                case NSClosePathBezierPathElement:
+                    [d appendString:@"Z "];
+                    break;
+                default:
+                    break;
+            }
+        }
+        return [NSString stringWithFormat:@"<path d=\"%@\" %@/>", d, SVCommonAttrs(shape)];
+    }
+    return @"";
+}
+
+- (NSString *)svgString {
+    NSMutableString *s = [NSMutableString string];
+    [s appendString:@"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"];
+    [s appendFormat:@"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%g\" height=\"%g\" viewBox=\"0 0 %g %g\">\n",
+        _artboardSize.width, _artboardSize.height, _artboardSize.width, _artboardSize.height];
+    for (SVShape *shape in _shapes) {
+        NSString *el = [self svgElementForShape:shape];
+        if ([el length])
+            [s appendFormat:@"  %@\n", el];
+    }
+    [s appendString:@"</svg>\n"];
+    return s;
+}
+
+- (BOOL)writeSVGToPath:(NSString *)path error:(NSError **)outError {
+    NSData *data = [[self svgString] dataUsingEncoding:NSUTF8StringEncoding];
+    BOOL ok = data != nil && [data writeToFile:path atomically:YES];
+    if (!ok && outError)
+        *outError = [NSError errorWithDomain:NSCocoaErrorDomain code:NSFileWriteUnknownError userInfo:nil];
+    return ok;
+}
+
 - (BOOL)readFromFile:(NSString *)path error:(NSError **)outError {
 #if defined(GNUSTEP)
     NSData *data = [NSData dataWithContentsOfFile:path];

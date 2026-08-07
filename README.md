@@ -4,9 +4,9 @@ A simple **vector editor** (early Sketch–style) for GNUStep. Create and edit v
 
 ## Requirements
 
-- **SmallStepLib** must be built and installed first (same pattern as SmallPaint, SmallMinesweeper):
+- **SmallStepLib** must be built first (same pattern as the other apps):
   ```bash
-  cd ../SmallStepLib && make && make install
+  cd ../SmallStepLib && make
   ```
 - GNUStep (base + gui)
 

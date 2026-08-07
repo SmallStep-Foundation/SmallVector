@@ -46,7 +46,7 @@
 
 - (NSDictionary *)dictionaryRepresentation {
     NSMutableDictionary *d = [NSMutableDictionary dictionary];
-    [d setObject:NSStringFromRect(NSRectToCGRect(_frame)) forKey:@"frame"];
+    [d setObject:NSStringFromRect(_frame) forKey:@"frame"];
     if (_fillColor) {
         CGFloat r, g, b, a;
         [[_fillColor colorUsingColorSpaceName:NSDeviceRGBColorSpace] getRed:&r green:&g blue:&b alpha:&a];

@@ -109,18 +109,10 @@ static const CGFloat kMargin = 8.0;
 
 #if defined(GNUSTEP) && !__has_feature(objc_arc)
 - (void)dealloc {
-    [_scrollView release];
-    [_canvasView release];
+    /* Views are owned by the view hierarchy (added via addSubview:/
+     * setDocumentView: and released in buildContent); the window's dealloc
+     * tears them down via the content view. Only owned objects are released. */
     [_document release];
-    [_toolStrip release];
-    [_selectButton release];
-    [_rectButton release];
-    [_ovalButton release];
-    [_pathButton release];
-    [_fillSwatch release];
-    [_strokeSwatch release];
-    [_fillColorButton release];
-    [_strokeColorButton release];
     [_documentPath release];
     [super dealloc];
 }
@@ -355,6 +347,50 @@ static const CGFloat kMargin = 8.0;
 #endif
         [_document setDirty:NO];
         [self updateTitle];
+    }
+}
+
+/* "Export a Copy…": write the current document to a new .smallvector file at
+ * a chosen location without changing the open document's path or dirty state
+ * (unlike Save As…, which adopts the new file). */
+- (void)exportACopy {
+    SSFileDialog *dialog = [SSFileDialog saveDialog];
+    [dialog setAllowedFileTypes:[NSArray arrayWithObject:@"smallvector"]];
+    NSArray *urls = [dialog showModal];
+    if (!urls || [urls count] == 0) return;
+    NSURL *url = [urls objectAtIndex:0];
+    NSString *path = [url path];
+    if (!path.length) return;
+    if (![[path pathExtension] length])
+        path = [path stringByAppendingPathExtension:@"smallvector"];
+    NSError *err = nil;
+    if (![_document writeToFile:path error:&err]) {
+        NSString *detail = [err localizedDescription];
+        if (!detail || [detail length] == 0)
+            detail = [NSString stringWithFormat:@"Could not write %@.", path];
+        /* detail passed as an argument, not a format string (may contain %) */
+        NSRunAlertPanel(@"Export Failed", @"%@", @"OK", nil, nil, detail);
+    }
+}
+
+/* "Export SVG…": write the current artboard and shapes as a standalone SVG. */
+- (void)exportSVG {
+    SSFileDialog *dialog = [SSFileDialog saveDialog];
+    [dialog setAllowedFileTypes:[NSArray arrayWithObject:@"svg"]];
+    NSArray *urls = [dialog showModal];
+    if (!urls || [urls count] == 0) return;
+    NSURL *url = [urls objectAtIndex:0];
+    NSString *path = [url path];
+    if (!path.length) return;
+    if (![[path pathExtension] length])
+        path = [path stringByAppendingPathExtension:@"svg"];
+    NSError *err = nil;
+    if (![_document writeSVGToPath:path error:&err]) {
+        NSString *detail = [err localizedDescription];
+        if (!detail || [detail length] == 0)
+            detail = [NSString stringWithFormat:@"Could not write %@.", path];
+        /* detail passed as an argument, not a format string (may contain %) */
+        NSRunAlertPanel(@"Export SVG Failed", @"%@", @"OK", nil, nil, detail);
     }
 }
 

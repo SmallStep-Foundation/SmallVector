@@ -44,7 +44,7 @@ A simple **vector editor** (early Sketch–style) in Objective-C and GNUStep, fo
    - GNUmakefile: `include common.make` and `application.make`.  
    - `APP_NAME = SmallVector`.  
    - List all `.m` in `SmallVector_OBJC_FILES`, headers in `SmallVector_HEADER_FILES`.  
-   - Include dirs: `-I. -IApp -IUI -ICore` and `-I../SmallStepLib/SmallStep/Core` (and `Platform/Linux` if needed).  
+   - Include dirs: `-I. -IApp -IUI -ICore` and `-I../SmallStepLib/SmallStep/Headers/Core` (and `-I../SmallStepLib/SmallStep/Headers/Platform/Linux` if needed).  
    - Link SmallStep as in SmallMinesweeper/SmallPaint: detect `SmallStep.framework`, set `SMALLSTEP_LIB_PATH` and `SMALLSTEP_LDFLAGS`, `LDFLAGS` with `-Wl,--allow-shlib-undefined`, `ADDITIONAL_LDFLAGS` and `TOOL_LIBS` with `-lSmallStep`.  
    - Do **not** depend on `CanvasView` for the vector canvas; SmallVector implements its own view and model.
 

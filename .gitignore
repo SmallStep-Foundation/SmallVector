@@ -1,3 +1,5 @@
 # Build artifacts
 *.d
 *.o
+obj/
+*.app/

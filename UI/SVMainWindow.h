@@ -31,5 +31,7 @@
 - (void)openDocument;
 - (void)saveDocument;
 - (void)saveDocumentAs;
+- (void)exportACopy;
+- (void)exportSVG;
 
 @end

@@ -36,4 +36,10 @@
 - (BOOL)writeToFile:(NSString *)path error:(NSError **)outError;
 - (BOOL)readFromFile:(NSString *)path error:(NSError **)outError;
 
+/// SVG source (standalone <svg> document) of the current artboard and shapes.
+- (NSString *)svgString;
+
+/// Write the SVG representation to a file; returns YES on success.
+- (BOOL)writeSVGToPath:(NSString *)path error:(NSError **)outError;
+
 @end
